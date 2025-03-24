@@ -1,10 +1,10 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from utils import chatbot
-from openai import OpenAI
+from utils import chatbot,append_to_chat
 from dotenv import load_dotenv
 from firebaseconfig import auth
 from firebaseconfig import db  
+
 
 app = FastAPI(
     title="My chatbot with gpt-4o-mini",
@@ -23,6 +23,9 @@ class LoginRequest(BaseModel):
 
 class ChatUpdate(BaseModel):
     new_title: str 
+
+class ChatContinue(BaseModel):
+    prompt: str
 
 # Endpoint para el registro (signup)
 @app.post("/signup", tags=["Firebase auth"])
@@ -84,3 +87,22 @@ async def delete_chat(chat_id: str):
         raise HTTPException(status_code=404, detail="Chat no existe!")
     chat_ref.delete()
     return {"message":"chat eliminado con exito!", "chat_id":chat_id}
+
+
+#continuar un chat
+@app.post("/chat/{chat_id}/continue", tags=["continuar chatbot"])
+async def continue_chat(chat_id: str, chat_input: ChatContinue):
+    chat_ref = db.collection("Chatbot").document(chat_id)
+    chat = chat_ref.get()
+
+    if not chat.exists:
+        raise HTTPException(status_code=404, detail="Chat no encontrado")
+    bot_response = chatbot(chat_input.prompt)
+
+    # Agregar el nuevo mensaje a la conversación
+    updated_chat = append_to_chat(chat_id, chat_input.prompt, bot_response)
+
+    if updated_chat is None:
+        raise HTTPException(status_code=500, detail="Error al actualizar el chat")
+
+    return {"chat": updated_chat}

@@ -1,0 +1,5 @@
+*.long
+.venv
+_pycache_
+openai_server.ipynb
+academia-10796-firebase-adminsdk-fbsvc-15274f6725.json

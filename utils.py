@@ -38,4 +38,15 @@ def chatbot(prompt: str) -> str:
         firestiresave(prompt, bot_response)
         return bot_response
 
+def append_to_chat(chat_id: str, user_prompt: str, bot_response: str):
+    chat_ref = db.collection("Chatbot").document(chat_id)
+    chat = chat_ref.get()
+    if not chat.exists:
+        return None
+    chat_data = chat.to_dict()
+    if "messages" not in chat_data:
+        chat_data["messages"] = []
+    chat_data["messages"].append({"user": user_prompt, "bot": bot_response})
+    chat_ref.update({"messages": chat_data["messages"]})
+    return chat_data
 
